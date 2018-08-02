@@ -1,4 +1,5 @@
 import React from "react";
+import openSocket from 'socket.io-client';
 
 const frameStyle = {
   minHeight: 10,
@@ -9,6 +10,8 @@ export default class SocketFrame extends React.Component {
 
   constructor() {
     super();
+    this.socket = null;
+
     this.state = {
       input: "",
       history: [],
@@ -54,15 +57,45 @@ export default class SocketFrame extends React.Component {
   }
 
   establishConnection = () => {
+    this.socket = openSocket('http://localhost:3001', {
+      // forceNew: true,
+      autoConnect: false,
+      reconnection: false,
+    });
+
+    this.socket.open();
+
+    this.socket.on('connect', () => {
+      this.setState(prev => {
+        const messages = [...prev.messages, "Connected"];
+
+        return {...prev, messages, connected: true}
+      })
+    });
+
+    this.socket.on('message', (data) => {
+      this.setState((prev) => {
+        const messages = [...prev.messages, `> ${data}`];
+
+        return {...prev, input: "", messages}
+      })
+    });
+
     this.setState(prev => {
       const messages = [...prev.messages, "Connecting..."];
 
-      return {...prev, messages, connected: true}
+      return {...prev, messages}
     })
   };
 
   submit = (e) => {
     e.preventDefault();
+
+    if (!this.state.connected) {
+      return;
+    }
+
+    this.socket.emit('message', this.state.input);
 
     this.setState((prev) => {
       const history = [...prev.history];
