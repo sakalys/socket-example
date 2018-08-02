@@ -13,7 +13,7 @@ http.listen(PORT, function(){
 io.on('connect', (socket) => {
   console.log('connected', socket.id);
 
-  socket.on('message', (data) => {
-    socket.broadcast.emit('message', data);
+  socket.on('message', (text) => {
+    socket.broadcast.emit('message', {from: socket.id, text: text});
   })
 });
