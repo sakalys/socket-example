@@ -4,8 +4,8 @@ import SocketFrame from "./SocketFrame"
 
 class App extends Component {
 
-  constructor() {
-    super();
+  constructor(props) {
+    super(props);
     this.state = {
       frames: []
     };
@@ -24,7 +24,7 @@ class App extends Component {
         <div className="row" style={{marginTop: 10}}>
           {this.state.frames.map((frame, i) => (
             <div className="col-md-3" key={i}>
-              <SocketFrame/>
+              <SocketFrame onClose={() => {this.removeFrame(i)}}/>
             </div>
           ))}
         </div>
@@ -36,7 +36,16 @@ class App extends Component {
     this.setState((prev) => {
       return {...prev, frames: [...prev.frames, {}]}
     })
-  }
+  };
+
+  removeFrame = (i) => {
+    this.setState(prev => {
+      const frames = [...prev.frames];
+      delete frames[i];
+      return {...prev, frames}
+    });
+  };
+
 }
 
 export default App;

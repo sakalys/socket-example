@@ -1,4 +1,5 @@
 import React from "react";
+import PropTypes from "prop-types";
 import openSocket from 'socket.io-client';
 
 const frameStyle = {
@@ -95,7 +96,6 @@ export default class SocketFrame extends React.Component {
     this._printLn(`Connecting to ${host}...`, {type: 'debug'});
 
     this.socket.on('disconnect', () => {
-      this.socket.close();
       this.socket = null;
       this.setState({connected: false});
       this._printLn('Disconnected. Reconnect not implemented.', {type: 'debug'});
@@ -112,7 +112,8 @@ export default class SocketFrame extends React.Component {
       this._printLn(`Members in channel: ${body.members}.`, {type: 'meta'});
       this._printLn(`Available commands:`, {type: 'meta'});
       this._printLn("  /private {secret} — the private channel", {type: 'meta'});
-      this._printLn("  /count — join the private channel", {type: 'meta'});
+      this._printLn("  /count — members in channel", {type: 'meta'});
+      this._printLn("  /quit — close frame", {type: 'meta'});
     });
 
     this.socket.on('message', (message) => {
@@ -142,6 +143,10 @@ export default class SocketFrame extends React.Component {
       if (input.startsWith('/count')) {
         this.socket.emit('req_channel_count');
         this._clearInput();
+      }
+
+      if (input.startsWith('/quit')) {
+        this.props.onClose();
       }
 
       return;
@@ -174,3 +179,7 @@ export default class SocketFrame extends React.Component {
     });
   }
 }
+
+SocketFrame.propTypes = {
+  onClose: PropTypes.func.isRequired
+};
