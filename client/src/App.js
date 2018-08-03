@@ -22,9 +22,9 @@ class App extends Component {
       <div className="App" style={{overflow: "hidden", padding: 10}}>
         <button onClick={this.addFrame}>Add frame</button>
         <div className="row" style={{marginTop: 10}}>
-          {this.state.frames.map((frame, i) => (
-            <div className="col-md-3" key={i}>
-              <SocketFrame onClose={() => {this.removeFrame(i)}}/>
+          {this.state.frames.map((frame) => (
+            <div className="col-md-3" key={frame.id}>
+              <SocketFrame onClose={() => {this.removeFrame(frame.id)}}/>
             </div>
           ))}
         </div>
@@ -34,14 +34,16 @@ class App extends Component {
 
   addFrame = () => {
     this.setState((prev) => {
-      return {...prev, frames: [...prev.frames, {}]}
+      const frame = {id: Math.random().toString(36).substr(2, 5)};
+      return {...prev, frames: [...prev.frames, frame]}
     })
   };
 
-  removeFrame = (i) => {
+  removeFrame = (id) => {
     this.setState(prev => {
       const frames = [...prev.frames];
-      delete frames[i];
+      const removeIndex = frames.findIndex(frame => frame.id === id);
+      frames.splice(removeIndex, 1);
       return {...prev, frames}
     });
   };

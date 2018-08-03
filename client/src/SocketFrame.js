@@ -27,7 +27,7 @@ export default class SocketFrame extends React.Component {
   }
 
   componentWillUnmount() {
-    this.socket.close();
+    this._removeConnection();
   }
 
   componentDidUpdate() {
@@ -35,13 +35,50 @@ export default class SocketFrame extends React.Component {
   }
 
   render() {
+
+    const style = {
+      height: "300px",
+      fontSize: ".7em",
+      overflowY: 'scroll',
+      borderTop: "1px solid gray"
+    };
+
     return (
       <div style={frameStyle}>
+
+        <header className="row">
+          {this.state.rooms.length > 1 && (
+            <div className="rooms col">
+              Posting to:{" "}
+              {this.state.rooms.map((room, i) => {
+                const style = {};
+
+                if (room !== this.state.currentRoom) {
+                  style.cursor = "pointer";
+                  style.color = 'lightgray';
+                } else {
+                  style.textDecoration = "underline";
+                }
+
+
+                return (
+                  <span key={room}>
+                    <span style={style} onClick={() => this.selectRoom(room)}>#{room}</span>
+                    {i < this.state.rooms.length - 1 ? " - " : ""}
+                  </span>
+                )
+              })}
+            </div>
+          )}
+          <div className="col-auto ml-auto">
+            <a role="button" onClick={this.close} style={{cursor: "pointer"}}>X</a>
+          </div>
+        </header>
 
         <div
           ref="lines"
           className="text-monospace"
-          style={{height: "300px", fontSize: ".8em", overflowY: 'scroll'}}>
+          style={style}>
           {this.state.lines.map((line, i) => {
 
             const style = {whiteSpace: 'pre-wrap'};
@@ -85,29 +122,6 @@ export default class SocketFrame extends React.Component {
           </div>
         </form>
 
-        {this.state.rooms.length > 1 && (
-          <div className="rooms">
-            {this.state.rooms.map((room, i) => {
-              const style = {};
-
-              if (room !== this.state.currentRoom) {
-                style.textDecoration = "underline";
-                style.cursor = "pointer";
-              }
-
-
-              return (
-                <span key={room}>
-                  <span
-                    style={style}
-                    onClick={() => this.selectRoom(room)}>{room}</span>
-                  {i < this.state.rooms.length - 1 ? " - " : ""}
-                </span>
-              )
-            })}
-          </div>
-        )}
-
       </div>
     );
   }
@@ -124,9 +138,8 @@ export default class SocketFrame extends React.Component {
     this._printLn(`Connecting to ${host}...`, {type: 'debug'});
 
     this.socket.on('disconnect', () => {
-      this.socket = null;
-      this.setState({connected: false});
       this._printLn('Disconnected. Reconnect not implemented.', {type: 'debug'});
+      this._removeConnection();
     });
 
     this.socket.on('connect', () => {
@@ -137,16 +150,16 @@ export default class SocketFrame extends React.Component {
 
     this.socket.on('greeting', (body) => {
       this._printLn(`Welcome to #${body.channel}. Server time ${body.time}`, {type: 'meta'});
-      this._printLn(`Members in channel: ${body.members}.`, {type: 'meta'});
+      this._printLn(`Members in channel: ${body.members}`, {type: 'meta'});
       this._printLn(`Available commands:`, {type: 'meta'});
-      this._printLn("  /private {secret} — the private channel", {type: 'meta'});
+      this._printLn("  /private {secret} — access to admin channel", {type: 'meta'});
       this._printLn("  /count — members in channel", {type: 'meta'});
       this._printLn("  /quit — close frame", {type: 'meta'});
     });
 
     this.socket.on('message', (message) => {
       const print = `>${message.isPrivate ? "(private)" : ""} (${message.from}) ${message.text}`;
-      this._printLn(print, {type: "private"});
+      this._printLn(print, {type: message.isPrivate ? "private" : null});
     });
   };
 
@@ -197,7 +210,7 @@ export default class SocketFrame extends React.Component {
 
       // Close the frame
       if (text.startsWith('/quit')) {
-        this.props.onClose();
+        this.close();
       }
 
       return;
@@ -209,6 +222,11 @@ export default class SocketFrame extends React.Component {
     const print = (room === 'private' ? "(private) " : "") + '$ ' + text;
     this._printLn(print, {type: 'own'});
   };
+
+  close = () => {
+    this._removeConnection();
+    this.props.onClose();
+  }
 
   _pushToHistory(input) {
     this.setState((prev) => {
@@ -229,6 +247,16 @@ export default class SocketFrame extends React.Component {
 
       return {...prev, lines}
     });
+  }
+
+  _removeConnection() {
+    if (this.socket) {
+      if (!this.socket.disconnected) {
+        this.socket.close();
+      }
+      this.socket = null;
+      this.setState({connected: false});
+    }
   }
 }
 
