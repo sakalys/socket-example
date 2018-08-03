@@ -28,11 +28,15 @@ io.on('connect', (socket) => {
     clients--;
   });
 
-  socket.on('message', (text) => {
+  helper.reqRes('req_message', 'res_message', (text: string) => {
     socket.broadcast.emit('message', {from: socket.id, text: text});
   });
-
   helper.reqRes('req_channel_count', 'res_channel_count', () => [getMemberCount()]);
+  helper.reqRes('req_join_private', 'res_join_private', (secret) => {
+    const secretCorrect = secret === "secret";
+
+    return [secretCorrect];
+  })
 });
 
 
@@ -41,13 +45,18 @@ function getMemberCount() {
 }
 
 class SocketHelper {
-  constructor(private socket: Socket) {
+  constructor(private _socket: Socket) {
   }
 
-  reqRes(reqName: string, resName: string, cb: () => any[]) {
-    this.socket.on(reqName, async () => {
-      const data = await cb();
-      this.socket.emit(resName, ...data);
+  get socket() {
+    return this._socket;
+  }
+
+  reqRes(reqName: string, resName: string, cb: (...data: any[]) => any[] | void) {
+
+    this._socket.on(reqName, async (...reqData: any[]) => {
+      const resData = await cb(...reqData) || [];
+      this._socket.emit(resName, ...resData);
     });
   }
 }

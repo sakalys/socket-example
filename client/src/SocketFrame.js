@@ -135,14 +135,16 @@ export default class SocketFrame extends React.Component {
     const input = this.state.input;
 
     this._pushToHistory(input);
+    this._clearInput();
 
     if (input.startsWith('/')) {
       if (input.startsWith('/private')) {
+        const secret = input.split(' ')[1] || "";
+        this.socket.emit('req_join_private', secret);
       }
 
       if (input.startsWith('/count')) {
         this.socket.emit('req_channel_count');
-        this._clearInput();
       }
 
       if (input.startsWith('/quit')) {
@@ -152,8 +154,7 @@ export default class SocketFrame extends React.Component {
       return;
     }
 
-    this.socket.emit('message', input);
-    this._clearInput();
+    this.socket.emit('req_message', input);
 
     this._printLn('$ ' + input, {type: 'own'});
   };
