@@ -16,6 +16,8 @@ let clients = 0;
 io.on('connect', (socket) => {
   clients++;
 
+  socket.join('room.public');
+
   const helper = new SocketHelper(socket);
 
   socket.emit('greeting', {
@@ -28,13 +30,22 @@ io.on('connect', (socket) => {
     clients--;
   });
 
-  helper.reqRes('req_message', 'res_message', (text: string) => {
-    socket.broadcast.emit('message', {from: socket.id, text: text});
+  // Broadcast a message to a specified room
+  helper.reqRes('req_message', 'res_message', (body: {text: string, room: string}) => {
+    const isPrivate = body.room === 'private';
+
+    socket.broadcast
+      .to(`room.${body.room}`)
+      .emit('message', {from: socket.id, text: body.text, isPrivate});
   });
+
   helper.reqRes('req_channel_count', 'res_channel_count', () => [getMemberCount()]);
+
   helper.reqRes('req_join_private', 'res_join_private', (secret) => {
     const secretCorrect = secret === "secret";
-
+    if (secretCorrect) {
+      socket.join('room.private');
+    }
     return [secretCorrect];
   })
 });

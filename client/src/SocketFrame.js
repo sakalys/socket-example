@@ -4,7 +4,6 @@ import openSocket from 'socket.io-client';
 
 const frameStyle = {
   minHeight: 10,
-  borderBottom: '1px solid gray',
 };
 
 export default class SocketFrame extends React.Component {
@@ -16,6 +15,8 @@ export default class SocketFrame extends React.Component {
     this.state = {
       input: "",
       history: [],
+      rooms: ['public'],
+      currentRoom: 'public',
       lines: [],
       connected: false,
     }
@@ -49,6 +50,10 @@ export default class SocketFrame extends React.Component {
                 style.color = "blue";
               }
 
+              if (line.type === 'private') {
+                style.color = "#b77e32";
+              }
+
               if (line.type === 'debug') {
                 style.color = 'coral';
               }
@@ -63,7 +68,6 @@ export default class SocketFrame extends React.Component {
             )
           })}
         </div>
-
 
         <form onSubmit={this.submit} className="row">
 
@@ -80,6 +84,30 @@ export default class SocketFrame extends React.Component {
             <button>Send</button>
           </div>
         </form>
+
+        {this.state.rooms.length > 1 && (
+          <div className="rooms">
+            {this.state.rooms.map((room, i) => {
+              const style = {};
+
+              if (room !== this.state.currentRoom) {
+                style.textDecoration = "underline";
+                style.cursor = "pointer";
+              }
+
+
+              return (
+                <span key={room}>
+                  <span
+                    style={style}
+                    onClick={() => this.selectRoom(room)}>{room}</span>
+                  {i < this.state.rooms.length - 1 ? " - " : ""}
+                </span>
+              )
+            })}
+          </div>
+        )}
+
       </div>
     );
   }
@@ -117,12 +145,13 @@ export default class SocketFrame extends React.Component {
     });
 
     this.socket.on('message', (message) => {
-      this._printLn(`> (${message.from}) ${message.text}`);
+      const print = `>${message.isPrivate ? "(private)" : ""} (${message.from}) ${message.text}`;
+      this._printLn(print, {type: "private"});
     });
+  };
 
-    this.socket.on('res_channel_count', (count) => {
-      this._printLn(`Members in channel: ${count}`, {type: 'meta'});
-    })
+  selectRoom = (room) => {
+    this.setState({currentRoom: room})
   };
 
   submit = (e) => {
@@ -132,31 +161,53 @@ export default class SocketFrame extends React.Component {
       return;
     }
 
-    const input = this.state.input;
+    const text = this.state.input;
 
-    this._pushToHistory(input);
+    this._pushToHistory(text);
     this._clearInput();
 
-    if (input.startsWith('/')) {
-      if (input.startsWith('/private')) {
-        const secret = input.split(' ')[1] || "";
+    // If input starts with a slash, that means that it it is a command
+    if (text.startsWith('/')) {
+
+      // Attempt to join the private channel
+      if (text.startsWith('/private')) {
+        const secret = text.split(' ')[1] || "";
         this.socket.emit('req_join_private', secret);
+        this.socket.once('res_join_private', (result) => {
+          if (!result || this.state.rooms.indexOf('private') > -1) {
+            return;
+          }
+
+          this.setState((prev) => {
+            const rooms = [prev.rooms];
+            rooms.push('private');
+
+            return {...prev, rooms, currentRoom: 'private'}
+          });
+        })
       }
 
-      if (input.startsWith('/count')) {
+      // Request the count of users in channel
+      if (text.startsWith('/count')) {
         this.socket.emit('req_channel_count');
+        this.socket.once('res_channel_count', (count) => {
+          this._printLn(`Members in channel: ${count}`, {type: 'meta'});
+        })
       }
 
-      if (input.startsWith('/quit')) {
+      // Close the frame
+      if (text.startsWith('/quit')) {
         this.props.onClose();
       }
 
       return;
     }
 
-    this.socket.emit('req_message', input);
+    const room = this.state.currentRoom;
+    this.socket.emit('req_message', {room, text: text});
 
-    this._printLn('$ ' + input, {type: 'own'});
+    const print = (room === 'private' ? "(private) " : "") + '$ ' + text;
+    this._printLn(print, {type: 'own'});
   };
 
   _pushToHistory(input) {
