@@ -11,7 +11,7 @@ http.listen(PORT, function(){
 
 
 io.on('connect', (socket) => {
-  console.log('connected', socket.id);
+  socket.emit('greeting', {channel: 'public', time: (new Date).toString()});
 
   socket.on('message', (text) => {
     socket.broadcast.emit('message', {from: socket.id, text: text});

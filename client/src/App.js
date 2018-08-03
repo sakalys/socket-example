@@ -19,9 +19,9 @@ class App extends Component {
 
   render() {
     return (
-      <div className="App" style={{overflow: "hidden"}}>
+      <div className="App" style={{overflow: "hidden", padding: 10}}>
         <button onClick={this.addFrame}>Add frame</button>
-        <div className="row">
+        <div className="row" style={{marginTop: 10}}>
           {this.state.frames.map((frame, i) => (
             <div className="col-md-3" key={i}>
               <SocketFrame/>

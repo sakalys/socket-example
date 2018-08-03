@@ -25,18 +25,31 @@ export default class SocketFrame extends React.Component {
   }
 
   componentWillUnmount() {
-    this.dropConnection();
+    this.socket.close();
+  }
+
+  componentDidUpdate() {
+    this.refs.lines.scrollTop = this.refs.lines.scrollHeight;
   }
 
   render() {
     return (
       <div style={frameStyle}>
 
-        <div className="text-monospace" style={{height: "300px"}}>
+        <div
+          ref="lines"
+          className="text-monospace"
+          style={{height: "300px", fontSize: ".8em", overflowY: 'scroll'}}>
           {this.state.lines.map((line, i) => {
             const style = {};
-            if (line.own) {
-              style.color = "blue";
+            if (line.type) {
+              if (line.type === 'own') {
+                style.color = "blue";
+              }
+
+              if (line.type === 'meta') {
+                style.color = 'gray';
+              }
             }
 
             return (
@@ -81,6 +94,10 @@ export default class SocketFrame extends React.Component {
       this.setState(prev => ({...prev, connected: true}));
     });
 
+    this.socket.on('greeting', (body) => {
+      this._print(`Welcome to #${body.channel}. Server time ${body.time}`, {type: 'meta'})
+    });
+
     this.socket.on('message', (message) => {
       this._print(`> (${message.from}) ${message.text}`);
     });
@@ -112,7 +129,7 @@ export default class SocketFrame extends React.Component {
       return {...prev, input: "", history}
     });
 
-    this._print('$ ' + input, {own: true});
+    this._print('$ ' + input, {type: 'own'});
   };
 
 

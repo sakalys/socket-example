@@ -1,12 +1,5 @@
 # Task
 
-Paruošti real-time žinučių apsikeitimo sistemą naudojant socket.io ant
-node.js.
-
-Front-end dailies daryt nebūtina (ir reikalavimų jokių nėra), jei bus
-galima jungles per https://www.npmjs.com/package/wscat.
-
-
 Sistema turi tūrėti bent 1 public ir bent 1 private kanalą. Į private
 kanalą patekti galima tik įvedus tam tikrą kodą (tarkim "secret").
 
