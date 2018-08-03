@@ -41,10 +41,15 @@ export default class SocketFrame extends React.Component {
           className="text-monospace"
           style={{height: "300px", fontSize: ".8em", overflowY: 'scroll'}}>
           {this.state.lines.map((line, i) => {
-            const style = {};
+
+            const style = {whiteSpace: 'pre-wrap'};
             if (line.type) {
               if (line.type === 'own') {
                 style.color = "blue";
+              }
+
+              if (line.type === 'debug') {
+                style.color = 'coral';
               }
 
               if (line.type === 'meta') {
@@ -79,61 +84,88 @@ export default class SocketFrame extends React.Component {
   }
 
   establishConnection = () => {
-    this.socket = openSocket('http://localhost:3001', {
+    const host = 'http://localhost:3001';
+    this.socket = openSocket(host, {
       // forceNew: true,
       autoConnect: false,
       reconnection: false,
     });
 
     this.socket.open();
-    this._print('Connecting');
+    this._printLn(`Connecting to ${host}...`, {type: 'debug'});
+
+    this.socket.on('disconnect', () => {
+      this.socket.close();
+      this.socket = null;
+      this.setState({connected: false});
+      this._printLn('Disconnected. Reconnect not implemented.', {type: 'debug'});
+    });
 
     this.socket.on('connect', () => {
 
-      this._print("Connected");
-      this.setState(prev => ({...prev, connected: true}));
+      this._printLn(`Connected`, {type: 'debug'});
+      this.setState({connected: true});
     });
 
     this.socket.on('greeting', (body) => {
-      this._print(`Welcome to #${body.channel}. Server time ${body.time}`, {type: 'meta'})
+      this._printLn(`Welcome to #${body.channel}. Server time ${body.time}`, {type: 'meta'});
+      this._printLn(`Members in channel: ${body.members}.`, {type: 'meta'});
+      this._printLn(`Available commands:`, {type: 'meta'});
+      this._printLn("  /private {secret} — the private channel", {type: 'meta'});
+      this._printLn("  /count — join the private channel", {type: 'meta'});
     });
 
     this.socket.on('message', (message) => {
-      this._print(`> (${message.from}) ${message.text}`);
+      this._printLn(`> (${message.from}) ${message.text}`);
     });
+
+    this.socket.on('res_channel_count', (count) => {
+      this._printLn(`Members in channel: ${count}`, {type: 'meta'});
+    })
   };
 
   submit = (e) => {
     e.preventDefault();
 
-    if (!this.state.connected) {
+    if (!this.state.connected || !this.state.input.trim()) {
       return;
     }
 
     const input = this.state.input;
 
+    this._pushToHistory(input);
+
     if (input.startsWith('/')) {
       if (input.startsWith('/private')) {
+      }
 
+      if (input.startsWith('/count')) {
+        this.socket.emit('req_channel_count');
+        this._clearInput();
       }
 
       return;
     }
 
     this.socket.emit('message', input);
+    this._clearInput();
 
-    this.setState((prev) => {
-      const history = [...prev.history];
-      history.push(prev.input);
-
-      return {...prev, input: "", history}
-    });
-
-    this._print('$ ' + input, {type: 'own'});
+    this._printLn('$ ' + input, {type: 'own'});
   };
 
+  _pushToHistory(input) {
+    this.setState((prev) => {
+      const history = [...prev.history];
+      history.push(input);
+      return {...prev, history}
+    });
+  }
 
-  _print(text, opts = {}) {
+  _clearInput() {
+    this.setState({input: ""});
+  }
+
+  _printLn(text, opts = {}) {
     this.setState((prev) => {
 
       const lines = [...prev.lines, {text, ...opts}];
