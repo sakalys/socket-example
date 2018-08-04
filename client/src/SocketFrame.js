@@ -183,10 +183,18 @@ export default class SocketFrame extends React.Component {
         const secret = text.split(' ')[1] || "";
         this.socket.emit('req_join_private', secret);
         this.socket.once('res_join_private', (result) => {
-          if (!result || this.state.rooms.indexOf('private') > -1) {
+
+          if (this.state.rooms.indexOf('private') > -1) {
+            this._printLn('You already have access to #private', {type: 'meta'});
             return;
           }
 
+          if (!result) {
+            this._printLn('The pass-phrase is you entered is incorrect', {type: 'meta'});
+            return;
+          }
+
+          this._printLn('You can now post to #private', {type: 'meta'});
           this.setState((prev) => {
             const rooms = [prev.rooms];
             rooms.push('private');

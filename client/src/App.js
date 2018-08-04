@@ -24,7 +24,7 @@ class App extends Component {
         <div className="container">
         <button onClick={this.addFrame}>Add frame</button>
         </div>
-        <div className="row" style={{marginTop: 10}}>
+        <div className="row" style={{marginTop: 18}}>
           {this.state.frames.map((frame) => (
             <div className="col-md-3 col-xxl-2 frame-container" key={frame.id}>
               <SocketFrame onClose={() => {this.removeFrame(frame.id)}}/>
