@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "main": "index.js",
   "license": "MIT",
+  "scripts": {
+    "start": "node -r ts-node/register server.ts"
+  },
   "dependencies": {
     "@types/socket.io": "^1.4.36",
     "socket.io": "^2.1.1",
