@@ -38,7 +38,7 @@ export default class SocketFrame extends React.Component {
 
     const style = {
       height: "300px",
-      fontSize: ".7em",
+      fontSize: ".8em",
       overflowY: 'scroll',
       borderTop: "1px solid gray"
     };
