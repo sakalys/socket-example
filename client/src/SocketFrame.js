@@ -127,7 +127,11 @@ export default class SocketFrame extends React.Component {
   }
 
   establishConnection = () => {
-    const host = 'http://localhost:3001';
+
+    const host = process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3001'
+      : 'http://www.sakalys.com:3001';
+
     this.socket = openSocket(host, {
       // forceNew: true,
       autoConnect: false,
