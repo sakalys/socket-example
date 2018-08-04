@@ -151,10 +151,6 @@ export default class SocketFrame extends React.Component {
     this.socket.on('greeting', (body) => {
       this._printLn(`Welcome to #${body.channel}. Server time ${body.time}`, {type: 'meta'});
       this._printLn(`Members in channel: ${body.members}`, {type: 'meta'});
-      this._printLn(`Available commands:`, {type: 'meta'});
-      this._printLn("  /private {secret} — access to admin channel", {type: 'meta'});
-      this._printLn("  /count — members in channel", {type: 'meta'});
-      this._printLn("  /quit — close frame", {type: 'meta'});
     });
 
     this.socket.on('message', (message) => {

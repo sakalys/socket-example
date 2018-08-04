@@ -15,15 +15,18 @@ class App extends Component {
   componentDidMount() {
     this.addFrame();
     this.addFrame();
+    this.addFrame();
   }
 
   render() {
     return (
       <div className="App" style={{overflow: "hidden", padding: 10}}>
+        <div className="container">
         <button onClick={this.addFrame}>Add frame</button>
+        </div>
         <div className="row" style={{marginTop: 10}}>
           {this.state.frames.map((frame) => (
-            <div className="col-md-3" key={frame.id}>
+            <div className="col-md-3 col-xxl-2 frame-container" key={frame.id}>
               <SocketFrame onClose={() => {this.removeFrame(frame.id)}}/>
             </div>
           ))}

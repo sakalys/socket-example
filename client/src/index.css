@@ -7,3 +7,11 @@ body {
   padding: 0;
   font-family: sans-serif;
 }
+
+@media screen and (min-width: 1620px) {
+  .col-xxl-2, .frame-container {
+    /* one sixth — 1/6 */
+    flex: 0 0 16.666667%;
+    max-width: 16.666667%;
+  }
+}
