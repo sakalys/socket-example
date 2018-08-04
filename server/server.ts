@@ -1,7 +1,10 @@
 import socketIo, { Socket } from "socket.io"
 import { createServer } from "http";
 
-const http = createServer();
+const http = createServer((req, res) => {
+  res.write("Nothing to see here");
+  res.end();
+});
 
 const PORT = 3001;
 
